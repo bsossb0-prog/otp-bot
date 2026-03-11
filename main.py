@@ -4,7 +4,7 @@ import time
 import threading
 from telebot.types import *
 
-TOKEN = "টোকেন"
+TOKEN = "8253626154:AAGWBaV4GXs6klQDYAnwn1NdDcD1b02fbAk"
 GROUP_ID = -1003549378995
 ADMIN_ID = 8626918981
 
