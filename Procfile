@@ -1,1 +1,1 @@
-bot.infinity_polling()
+worker: python main.py
