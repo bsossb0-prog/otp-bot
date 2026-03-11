@@ -4,7 +4,7 @@ import time
 import threading
 from telebot.types import *
 
-TOKEN = "8253626154:AAGWBaV4GXs6klQDYAnwn1NdDcD1b02fbAk"
+TOKEN = "টোকেন"
 GROUP_ID = -1003549378995
 ADMIN_ID = 8626918981
 
@@ -17,37 +17,28 @@ otp_count = 0
 countries = [
 
 {"name":"Bangladesh","flag":"🇧🇩","code":"#BD","prefix":"+88019","service":"Facebook","active":True},
-
 {"name":"Nepal","flag":"🇳🇵","code":"#NP","prefix":"+97798","service":"WhatsApp","active":True},
-
 {"name":"Germany","flag":"🇩🇪","code":"#DE","prefix":"+4915","service":"Telegram","active":True},
-
 {"name":"USA","flag":"🇺🇸","code":"#US","prefix":"+1201","service":"Telegram","active":True},
-
 {"name":"Afghanistan","flag":"🇦🇫","code":"#AF","prefix":"+937","service":"Facebook","active":True},
-
 {"name":"Italy","flag":"🇮🇹","code":"#IT","prefix":"+39347","service":"Telegram","active":True},
-
 {"name":"Saudi Arabia","flag":"🇸🇦","code":"#SA","prefix":"+9665","service":"WhatsApp","active":True},
-
 {"name":"Vietnam","flag":"🇻🇳","code":"#VN","prefix":"+849","service":"WhatsApp","active":True},
-
 {"name":"Pakistan","flag":"🇵🇰","code":"#PK","prefix":"+923","service":"WhatsApp","active":True},
-
 {"name":"Kuwait","flag":"🇰🇼","code":"#KW","prefix":"+965","service":"WhatsApp","active":True},
-
 {"name":"Zimbabwe","flag":"🇿🇼","code":"#ZW","prefix":"+263","service":"Telegram","active":True},
-
 {"name":"Armenia","flag":"🇦🇲","code":"#AM","prefix":"+374","service":"Facebook","active":True},
-
 {"name":"Slovenia","flag":"🇸🇮","code":"#SI","prefix":"+386","service":"Telegram","active":True},
-
 {"name":"Finland","flag":"🇫🇮","code":"#FI","prefix":"+358","service":"Telegram","active":True}
 
 ]
 
-# KEYBOARD
+# ADMIN CHECK
+def is_admin(user_id):
+    return user_id == ADMIN_ID
 
+
+# MAIN KEYBOARD
 def main_keyboard():
 
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -60,7 +51,6 @@ def main_keyboard():
 
 
 # NUMBER MASK
-
 def mask(prefix):
 
     a=random.randint(100,999)
@@ -70,7 +60,6 @@ def mask(prefix):
 
 
 # GENERATOR
-
 def generator():
 
     global otp_count
@@ -116,22 +105,29 @@ def generator():
 threading.Thread(target=generator).start()
 
 
-# START
-
+# START COMMAND
 @bot.message_handler(commands=['start'])
 def start(msg):
 
     bot.send_message(msg.chat.id,"🤖 OTP BOT READY",reply_markup=main_keyboard())
 
 
-# BUTTON HANDLER
-
+# PANEL HANDLER
 @bot.message_handler(func=lambda m: True)
 def panel(message):
 
     global running
 
-    if message.text=="⚡ Speed":
+    # ADMIN SECURITY
+    if message.text in ["🎛 Admin Panel","⚡ Speed","🌍 Countries","▶ Start Generator","⏹ Stop Generator"]:
+        if not is_admin(message.from_user.id):
+            bot.send_message(message.chat.id,"⛔ Access Denied\nAdmin Only Panel")
+            return
+
+    if message.text=="🎛 Admin Panel":
+        bot.send_message(message.chat.id,"🎛 Admin Panel Opened")
+
+    elif message.text=="⚡ Speed":
 
         bot.send_message(message.chat.id,f"⚡ Current Speed : {speed} sec")
 
@@ -159,18 +155,21 @@ def panel(message):
     elif message.text=="▶ Start Generator":
 
         running=True
-        bot.send_message(message.chat.id,"Generator Started")
+        bot.send_message(message.chat.id,"▶ Generator Started")
 
     elif message.text=="⏹ Stop Generator":
 
         running=False
-        bot.send_message(message.chat.id,"Generator Stopped")
+        bot.send_message(message.chat.id,"⏹ Generator Stopped")
 
 
 # COUNTRY TOGGLE
-
 @bot.callback_query_handler(func=lambda call: call.data.startswith("toggle_"))
 def toggle(call):
+
+    if not is_admin(call.from_user.id):
+        bot.answer_callback_query(call.id,"⛔ Admin Only")
+        return
 
     i=int(call.data.split("_")[1])
 
