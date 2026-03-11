@@ -15,35 +15,35 @@ running = True
 otp_count = 0
 
 services = [
-("📘 Facebook","Facebook"),
-("✈ Telegram","Telegram"),
-("🟢 WhatsApp","WhatsApp"),
-("🎵 TikTok","TikTok"),
-("🔍 Google","Google"),
-("📸 Instagram","Instagram"),
-("🐦 Twitter","Twitter"),
-("👻 Snapchat","Snapchat"),
-("💬 Messenger","Messenger"),
-("📧 Gmail","Gmail"),
-("🛒 Amazon","Amazon"),
-("🎮 Discord","Discord"),
-("💼 LinkedIn","LinkedIn"),
-("🎬 YouTube","YouTube"),
-("🤖 ChatGPT","ChatGPT")
+"Facebook",
+"Telegram",
+"WhatsApp",
+"TikTok",
+"Google",
+"Instagram",
+"Twitter",
+"Snapchat",
+"Messenger",
+"Gmail",
+"Amazon",
+"Discord",
+"LinkedIn",
+"YouTube",
+"ChatGPT"
 ]
 
 countries = [
 
-{"name":"Bangladesh","flag":"🇧🇩","code":"#BD","prefix":"+88019","service":"Facebook","active":True},
-{"name":"Nepal","flag":"🇳🇵","code":"#NP","prefix":"+97798","service":"WhatsApp","active":True},
-{"name":"Germany","flag":"🇩🇪","code":"#DE","prefix":"+4915","service":"Telegram","active":True},
-{"name":"USA","flag":"🇺🇸","code":"#US","prefix":"+1201","service":"Telegram","active":True},
-{"name":"Afghanistan","flag":"🇦🇫","code":"#AF","prefix":"+937","service":"Facebook","active":True},
-{"name":"Italy","flag":"🇮🇹","code":"#IT","prefix":"+39347","service":"Telegram","active":True},
-{"name":"Saudi Arabia","flag":"🇸🇦","code":"#SA","prefix":"+9665","service":"WhatsApp","active":True},
-{"name":"Vietnam","flag":"🇻🇳","code":"#VN","prefix":"+849","service":"WhatsApp","active":True},
-{"name":"Pakistan","flag":"🇵🇰","code":"#PK","prefix":"+923","service":"WhatsApp","active":True},
-{"name":"Kuwait","flag":"🇰🇼","code":"#KW","prefix":"+965","service":"WhatsApp","active":True}
+{"name":"Bangladesh","flag":"🇧🇩","code":"#BD","prefix":"+88019","active":True},
+{"name":"Nepal","flag":"🇳🇵","code":"#NP","prefix":"+97798","active":True},
+{"name":"Germany","flag":"🇩🇪","code":"#DE","prefix":"+4915","active":True},
+{"name":"USA","flag":"🇺🇸","code":"#US","prefix":"+1201","active":True},
+{"name":"Afghanistan","flag":"🇦🇫","code":"#AF","prefix":"+937","active":True},
+{"name":"Italy","flag":"🇮🇹","code":"#IT","prefix":"+39347","active":True},
+{"name":"Saudi Arabia","flag":"🇸🇦","code":"#SA","prefix":"+9665","active":True},
+{"name":"Vietnam","flag":"🇻🇳","code":"#VN","prefix":"+849","active":True},
+{"name":"Pakistan","flag":"🇵🇰","code":"#PK","prefix":"+923","active":True},
+{"name":"Kuwait","flag":"🇰🇼","code":"#KW","prefix":"+965","active":True}
 
 ]
 
@@ -56,7 +56,7 @@ def main_keyboard():
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
 
     kb.row("⚡ Speed","📊 OTP Stats")
-    kb.row("🌍 Countries","🛠 Service Edit")
+    kb.row("🌍 Countries")
     kb.row("▶ Start Generator","⏹ Stop Generator")
 
     return kb
@@ -88,13 +88,15 @@ def generator():
 
             number=mask(c["prefix"])
 
-            if c["service"]=="Telegram":
+            service=random.choice(services)
+
+            if service=="Telegram":
                 otp=random.randint(10000,99999)
             else:
                 otp=random.randint(100000,999999)
 
             text=f"""
-{c['flag']} {c['name']} {c['code']} 📱 {c['service']}
+{c['flag']} {c['name']} {c['code']} 📱 {service}
 
 {number}
 
@@ -117,7 +119,7 @@ def generator():
         time.sleep(speed)
 
 
-threading.Thread(target=generator).start()
+threading.Thread(target=generator, daemon=True).start()
 
 
 @bot.message_handler(commands=['start'])
@@ -138,18 +140,26 @@ def panel(message):
         return
 
     if message.text=="⚡ Speed":
+
         bot.send_message(message.chat.id,f"⚡ Current Speed : {speed} sec")
 
+
     elif message.text=="📊 OTP Stats":
+
         bot.send_message(message.chat.id,f"📊 OTP Generated : {otp_count}")
 
+
     elif message.text=="▶ Start Generator":
+
         running=True
         bot.send_message(message.chat.id,"✅ Generator Started")
 
+
     elif message.text=="⏹ Stop Generator":
+
         running=False
         bot.send_message(message.chat.id,"🛑 Generator Stopped")
+
 
     elif message.text=="🌍 Countries":
 
@@ -169,23 +179,6 @@ def panel(message):
         bot.send_message(message.chat.id,"🌍 Country Manager",reply_markup=keyboard)
 
 
-    elif message.text=="🛠 Service Edit":
-
-        keyboard=InlineKeyboardMarkup()
-
-        for i,c in enumerate(countries):
-
-            keyboard.row(
-            InlineKeyboardButton(
-            f"{c['flag']} {c['name']}",
-            callback_data=f"service_{i}"
-            )
-            )
-
-        bot.send_message(message.chat.id,"🛠 Select Country",reply_markup=keyboard)
-
-
-
 @bot.callback_query_handler(func=lambda call: call.data.startswith("toggle_"))
 def toggle(call):
 
@@ -199,45 +192,6 @@ def toggle(call):
     status="ON" if countries[i]["active"] else "OFF"
 
     bot.answer_callback_query(call.id,f"{countries[i]['name']} {status}")
-
-
-
-@bot.callback_query_handler(func=lambda call: call.data.startswith("service_"))
-def service_country(call):
-
-    i=int(call.data.split("_")[1])
-
-    keyboard=InlineKeyboardMarkup()
-
-    for icon,name in services:
-
-        keyboard.row(
-        InlineKeyboardButton(
-        icon+" "+name,
-        callback_data=f"setservice_{i}_{name}"
-        )
-        )
-
-    bot.edit_message_text(
-    f"{countries[i]['flag']} {countries[i]['name']} Select Service",
-    call.message.chat.id,
-    call.message.message_id,
-    reply_markup=keyboard
-    )
-
-
-
-@bot.callback_query_handler(func=lambda call: call.data.startswith("setservice_"))
-def set_service(call):
-
-    data=call.data.split("_")
-
-    i=int(data[1])
-    service=data[2]
-
-    countries[i]["service"]=service
-
-    bot.answer_callback_query(call.id,f"{countries[i]['name']} → {service}")
 
 
 print("BOT RUNNING...")
