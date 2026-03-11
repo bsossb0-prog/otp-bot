@@ -15,21 +15,9 @@ running = True
 otp_count = 0
 
 services = [
-"Facebook",
-"Telegram",
-"WhatsApp",
-"TikTok",
-"Google",
-"Instagram",
-"Twitter",
-"Snapchat",
-"Messenger",
-"Gmail",
-"Amazon",
-"Discord",
-"LinkedIn",
-"YouTube",
-"ChatGPT"
+"Facebook","Telegram","WhatsApp","TikTok","Google",
+"Instagram","Twitter","Snapchat","Messenger","Gmail",
+"Amazon","Discord","LinkedIn","YouTube","ChatGPT"
 ]
 
 countries = [
@@ -56,7 +44,7 @@ def main_keyboard():
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
 
     kb.row("⚡ Speed","📊 OTP Stats")
-    kb.row("🌍 Countries")
+    kb.row("🌍 Countries","🛠 Service Edit")
     kb.row("▶ Start Generator","⏹ Stop Generator")
 
     return kb
@@ -179,6 +167,23 @@ def panel(message):
         bot.send_message(message.chat.id,"🌍 Country Manager",reply_markup=keyboard)
 
 
+    elif message.text=="🛠 Service Edit":
+
+        keyboard=InlineKeyboardMarkup()
+
+        for i,c in enumerate(countries):
+
+            keyboard.row(
+            InlineKeyboardButton(
+            f"{c['flag']} {c['name']}",
+            callback_data=f"service_{i}"
+            )
+            )
+
+        bot.send_message(message.chat.id,"🛠 Select Country",reply_markup=keyboard)
+
+
+
 @bot.callback_query_handler(func=lambda call: call.data.startswith("toggle_"))
 def toggle(call):
 
@@ -192,6 +197,43 @@ def toggle(call):
     status="ON" if countries[i]["active"] else "OFF"
 
     bot.answer_callback_query(call.id,f"{countries[i]['name']} {status}")
+
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("service_"))
+def service_country(call):
+
+    i=int(call.data.split("_")[1])
+
+    keyboard=InlineKeyboardMarkup(row_width=2)
+
+    for s in services:
+
+        keyboard.add(
+        InlineKeyboardButton(
+        s,
+        callback_data=f"setservice_{i}_{s}"
+        )
+        )
+
+    bot.edit_message_text(
+    f"{countries[i]['flag']} {countries[i]['name']} Select Service",
+    call.message.chat.id,
+    call.message.message_id,
+    reply_markup=keyboard
+    )
+
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("setservice_"))
+def set_service(call):
+
+    data=call.data.split("_")
+
+    i=int(data[1])
+    service=data[2]
+
+    bot.answer_callback_query(call.id,f"{countries[i]['name']} → {service}")
 
 
 print("BOT RUNNING...")
