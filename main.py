@@ -5,13 +5,13 @@ import threading
 from telebot.types import *
 
 TOKEN = "8253626154:AAGWBaV4GXs6klQDYAnwn1NdDcD1b02fbAk"
-GROUP_ID = -100123456789
+GROUP_ID = -100XXXXXXXXXX
 ADMIN_ID = 123456789
 
 bot = telebot.TeleBot(TOKEN)
 
 speed = 3
-running = True
+running = False
 otp_count = 0
 
 
@@ -27,7 +27,6 @@ countries = [
 ]
 
 
-# NUMBER MASK
 def mask(prefix):
 
     a=random.randint(100,999)
@@ -36,7 +35,6 @@ def mask(prefix):
     return f"{prefix}{a}***{b}"
 
 
-# OTP GENERATOR
 def generator():
 
     global otp_count
@@ -47,7 +45,7 @@ def generator():
 
             active=[c for c in countries if c["active"]]
 
-            if len(active)==0:
+            if not active:
                 time.sleep(2)
                 continue
 
@@ -72,10 +70,8 @@ def generator():
             )
 
             try:
-
                 bot.send_message(GROUP_ID,text,reply_markup=keyboard)
                 otp_count+=1
-
             except:
                 pass
 
@@ -85,7 +81,6 @@ def generator():
 threading.Thread(target=generator,daemon=True).start()
 
 
-# ADMIN PANEL
 def admin_panel():
 
     kb=InlineKeyboardMarkup()
@@ -103,7 +98,15 @@ def admin_panel():
     return kb
 
 
-# ADMIN COMMAND
+@bot.message_handler(commands=['start'])
+def start(msg):
+
+    if msg.from_user.id != ADMIN_ID:
+        return
+
+    bot.send_message(msg.chat.id,"🤖 BOT READY",reply_markup=admin_panel())
+
+
 @bot.message_handler(commands=['admin'])
 def admin(msg):
 
@@ -124,7 +127,6 @@ def admin(msg):
     bot.send_message(msg.chat.id,text,reply_markup=admin_panel())
 
 
-# CALLBACK SYSTEM
 @bot.callback_query_handler(func=lambda call:True)
 def callback(call):
 
@@ -132,7 +134,7 @@ def callback(call):
     global speed
 
     if call.from_user.id != ADMIN_ID:
-        bot.answer_callback_query(call.id,"⛔ Admin Only")
+        bot.answer_callback_query(call.id,"Admin Only")
         return
 
 
