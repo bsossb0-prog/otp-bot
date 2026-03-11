@@ -111,7 +111,6 @@ threading.Thread(target=generator).start()
 def start(msg):
 
     if not is_admin(msg.from_user.id):
-        bot.send_message(msg.chat.id,"🤖 Bot Running")
         return
 
     bot.send_message(msg.chat.id,"🤖 OTP BOT READY",reply_markup=main_keyboard())
@@ -123,18 +122,8 @@ def panel(message):
 
     global running
 
-    admin_buttons=[
-        "🎛 Admin Panel",
-        "⚡ Speed",
-        "🌍 Countries",
-        "▶ Start Generator",
-        "⏹ Stop Generator"
-    ]
-
-    if message.text in admin_buttons and not is_admin(message.from_user.id):
-        bot.send_message(message.chat.id,"⛔ Only Admin Can Use This Panel")
+    if not is_admin(message.from_user.id):
         return
-
 
     if message.text=="⚡ Speed":
 
@@ -181,7 +170,6 @@ def panel(message):
 def toggle(call):
 
     if call.from_user.id != ADMIN_ID:
-        bot.answer_callback_query(call.id,"⛔ Admin Only")
         return
 
     i=int(call.data.split("_")[1])
