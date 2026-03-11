@@ -8,7 +8,7 @@ TOKEN = "8253626154:AAGWBaV4GXs6klQDYAnwn1NdDcD1b02fbAk"
 GROUP_ID = -1003549378995
 ADMIN_ID = 8626918981
 
-bot = telebot.TeleBot(TOKEN)
+bot = telebot.TeleBot(TOKEN, parse_mode="HTML")
 
 speed = 3
 running = True
@@ -68,7 +68,7 @@ def generator():
 
             active=[c for c in countries if c["active"]]
 
-            if len(active)==0:
+            if not active:
                 time.sleep(2)
                 continue
 
@@ -169,11 +169,11 @@ def panel(message):
 
     elif message.text=="🛠 Service Edit":
 
-        keyboard=InlineKeyboardMarkup()
+        keyboard=InlineKeyboardMarkup(row_width=2)
 
         for i,c in enumerate(countries):
 
-            keyboard.row(
+            keyboard.add(
             InlineKeyboardButton(
             f"{c['flag']} {c['name']}",
             callback_data=f"service_{i}"
