@@ -30,18 +30,19 @@ services = [
 
 countries = [
 
-{"name":"Bangladesh","flag":"🇧🇩","code":"#BD","prefix":"+88019","active":True,"service":"Telegram"},
-{"name":"Italy","flag":"🇮🇹","code":"#IT","prefix":"+39347","active":True,"service":"Telegram"},
-{"name":"USA","flag":"🇺🇸","code":"#US","prefix":"+1201","active":True,"service":"Google"},
-{"name":"Pakistan","flag":"🇵🇰","code":"#PK","prefix":"+923","active":True,"service":"WhatsApp"},
-{"name":"Vietnam","flag":"🇻🇳","code":"#VN","prefix":"+849","active":True,"service":"TikTok"}
+{"name":"Bangladesh","flag":"🇧🇩","code":"#BD","prefix":"+8801717","active":True,"service":"Telegram","count":0},
+{"name":"Italy","flag":"🇮🇹","code":"#IT","prefix":"+393471","active":True,"service":"Telegram","count":0},
+{"name":"USA","flag":"🇺🇸","code":"#US","prefix":"+120155","active":True,"service":"Google","count":0},
+{"name":"Pakistan","flag":"🇵🇰","code":"#PK","prefix":"+923451","active":True,"service":"WhatsApp","count":0},
+{"name":"Vietnam","flag":"🇻🇳","code":"#VN","prefix":"+849111","active":True,"service":"TikTok","count":0}
 
 ]
 
 def mask_number(prefix):
 
     last = random.randint(100,999)
-    return f"{prefix}***{last}"
+
+    return f"{prefix}****{last}"
 
 def generate_otp(service):
 
@@ -86,7 +87,10 @@ def generator():
 
             try:
                 bot.send_message(GROUP_ID,text,reply_markup=kb)
+
                 otp_count += 1
+                countries[countries.index(c)]["count"] += 1
+
             except:
                 pass
 
@@ -99,6 +103,7 @@ def main_menu():
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
 
     kb.row("⚡ Speed","📊 OTP Stats")
+    kb.row("📊 Live Generator Status")
     kb.row("🌍 Countries","🔧 Service Edit")
     kb.row("▶ Start Generator","⏹ Stop Generator")
 
@@ -126,6 +131,15 @@ def panel(message):
         message.chat.id,
         f"📊 OTP Generated : {otp_count}"
         )
+
+    elif "Live Generator Status" in message.text:
+
+        text = "📊 Live Generator Status\n\n"
+
+        for c in countries:
+            text += f"{c['flag']} {c['name']} → {c['count']} SMS\n"
+
+        bot.send_message(message.chat.id,text)
 
     elif "Countries" in message.text:
 
@@ -227,7 +241,7 @@ def callbacks(call):
 
         msg = bot.send_message(
         call.message.chat.id,
-        "Send country like:\n\n🇯🇵 Japan #JP +819 Telegram"
+        "Send country like:\n\n🇯🇵 Japan #JP +819011 Telegram"
         )
 
         bot.register_next_step_handler(msg, add_country_process)
@@ -317,7 +331,8 @@ def add_country_process(message):
         "code":code,
         "prefix":prefix,
         "active":True,
-        "service":service
+        "service":service,
+        "count":0
         })
 
         bot.send_message(message.chat.id,"✅ Country Added")
