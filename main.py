@@ -29,9 +29,13 @@ speed_options = {
 countries = [
 
 {"name":"Bangladesh","flag":"🇧🇩","code":"#BD","prefix":"+88019","service":"Facebook","speed":1,"active":True},
+
 {"name":"Italy","flag":"🇮🇹","code":"#IT","prefix":"+39347","service":"Telegram","speed":5,"active":False},
-{"name":"USA","flag":"🇺🇸","code":"#US","prefix":"+1201","service":"Google","speed":10,"active":False},
+
+{"name":"USA","flag":"🇺🇸","code":"#US","prefix":"+1201","service":"Google","speed":5,"active":False},
+
 {"name":"Pakistan","flag":"🇵🇰","code":"#PK","prefix":"+923","service":"WhatsApp","speed":5,"active":False},
+
 {"name":"Vietnam","flag":"🇻🇳","code":"#VN","prefix":"+849","service":"TikTok","speed":5,"active":False}
 
 ]
@@ -62,20 +66,26 @@ def generator():
 
     while True:
 
-        if running:
+        if not running:
+            time.sleep(2)
+            continue
 
-            active = [c for c in countries if c["active"]]
+        active = [c for c in countries if c["active"]]
 
-            if len(active)==0:
-                time.sleep(2)
-                continue
+        if len(active) == 0:
+            time.sleep(2)
+            continue
 
-            c=random.choice(active)
+        c = random.choice(active)
 
-            number=mask(c["prefix"])
-            otp=random.randint(100000,999999)
+        number = mask(c["prefix"])
 
-            text=f"""
+        if c["service"] == "Telegram":
+            otp = random.randint(10000,99999)
+        else:
+            otp = random.randint(100000,999999)
+
+        text=f"""
 {c['flag']} {c['name']} {c['code']} 📱 {c['service']}
 
 {number}
@@ -83,23 +93,20 @@ def generator():
 🔑 {otp}
 """
 
-            keyboard=InlineKeyboardMarkup()
+        keyboard=InlineKeyboardMarkup()
 
-            keyboard.row(
-            InlineKeyboardButton("📢 Main Channel",url="https://t.me/YOUR_CHANNEL"),
-            InlineKeyboardButton("🤖 Number Bot",url="https://t.me/numberfast12_bot")
-            )
+        keyboard.row(
+        InlineKeyboardButton("📢 Main Channel",url="https://t.me/YOUR_CHANNEL"),
+        InlineKeyboardButton("🤖 Number Bot",url="https://t.me/numberfast12_bot")
+        )
 
-            try:
-                bot.send_message(GROUP_ID,text,reply_markup=keyboard)
-                otp_count+=1
-            except:
-                pass
+        try:
+            bot.send_message(GROUP_ID,text,reply_markup=keyboard)
+            otp_count+=1
+        except:
+            pass
 
-            time.sleep(c["speed"])
-
-        else:
-            time.sleep(2)
+        time.sleep(c["speed"])
 
 
 threading.Thread(target=generator,daemon=True).start()
@@ -124,15 +131,18 @@ def panel(message):
 
 
     if message.text=="📊 OTP Stats":
+
         bot.send_message(message.chat.id,f"📊 OTP Generated : {otp_count}")
 
 
     elif message.text=="▶ Start Generator":
+
         running=True
         bot.send_message(message.chat.id,"✅ Generator Started")
 
 
     elif message.text=="⏹ Stop Generator":
+
         running=False
         bot.send_message(message.chat.id,"🛑 Generator Stopped")
 
