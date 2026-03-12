@@ -4,16 +4,23 @@ import time
 import threading
 from telebot.types import *
 
-TOKEN = "8253626154:AAGWBaV4GXs6klQDYAnwn1NdDcD1b02fbAk"
-GROUP_ID = -100XXXXXXXXX
-ADMIN_ID = 123456789
+TOKEN = "YOUR_BOT_TOKEN"
+
+GROUP_ID = -1003549378995
+ADMIN_ID = 8626918981
+
+CHANNEL_LINK = "https://t.me/YOUR_CHANNEL"
+BOT_LINK = "https://t.me/numberfast12_bot"
 
 bot = telebot.TeleBot(TOKEN)
 
 running = True
 otp_count = 0
 
-services = ["Facebook","Telegram","Google","WhatsApp","TikTok","Apple","1xBet"]
+services = [
+"Facebook","Telegram","Google","WhatsApp",
+"TikTok","Apple","Snapchat","Discord","LinkedIn","1xBet"
+]
 
 speed_options = {
 "1s":1,
@@ -65,46 +72,48 @@ def generator():
 
     while True:
 
-        if running:
+        if not running:
+            time.sleep(2)
+            continue
 
-            active = [c for c in countries if c["active"]]
+        active = [c for c in countries if c["active"]]
 
-            if len(active) > 0:
+        if len(active) == 0:
+            time.sleep(2)
+            continue
 
-                c = random.choice(active)
+        c = random.choice(active)
 
-                number = mask(c["prefix"])
+        service = c["service"]
+        number = mask(c["prefix"])
 
-                if c["service"] == "Telegram":
-                    otp = random.randint(10000,99999)
-                else:
-                    otp = random.randint(100000,999999)
+        if service == "Telegram":
+            otp = random.randint(10000,99999)
+        else:
+            otp = random.randint(100000,999999)
 
-                text=f"""
-{c['flag']} {c['name']} {c['code']} 📱 {c['service']}
+        text=f"""
+{c['flag']} {c['name']} {c['code']} 📱 {service}
 
 {number}
 
 🔑 {otp}
 """
 
-                keyboard=InlineKeyboardMarkup()
+        keyboard = InlineKeyboardMarkup()
 
-                keyboard.row(
-                InlineKeyboardButton("📢 Main Channel",url="https://t.me/YOUR_CHANNEL"),
-                InlineKeyboardButton("🤖 Number Bot",url="https://t.me/YOUR_BOT")
-                )
+        keyboard.row(
+        InlineKeyboardButton("📢 Main Channel",url=CHANNEL_LINK),
+        InlineKeyboardButton("🤖 Number Bot",url=BOT_LINK)
+        )
 
-                try:
-                    bot.send_message(GROUP_ID,text,reply_markup=keyboard)
-                    otp_count+=1
-                except:
-                    pass
+        try:
+            bot.send_message(GROUP_ID,text,reply_markup=keyboard)
+            otp_count += 1
+        except:
+            pass
 
-                time.sleep(c["speed"])
-
-        else:
-            time.sleep(2)
+        time.sleep(c["speed"])
 
 
 threading.Thread(target=generator,daemon=True).start()
@@ -128,30 +137,30 @@ def panel(m):
         return
 
 
-    if m.text=="📊 OTP Stats":
+    if m.text == "📊 OTP Stats":
 
         bot.send_message(m.chat.id,f"📊 OTP Generated : {otp_count}")
 
 
-    elif m.text=="▶ Start Generator":
+    elif m.text == "▶ Start Generator":
 
-        running=True
+        running = True
         bot.send_message(m.chat.id,"✅ Generator Started")
 
 
-    elif m.text=="⏹ Stop Generator":
+    elif m.text == "⏹ Stop Generator":
 
-        running=False
+        running = False
         bot.send_message(m.chat.id,"🛑 Generator Stopped")
 
 
-    elif m.text=="🌍 Countries":
+    elif m.text == "🌍 Countries":
 
-        kb=InlineKeyboardMarkup()
+        kb = InlineKeyboardMarkup()
 
         for i,c in enumerate(countries):
 
-            status="✅" if c["active"] else "❌"
+            status = "✅" if c["active"] else "❌"
 
             kb.row(
             InlineKeyboardButton(
@@ -163,9 +172,9 @@ def panel(m):
         bot.send_message(m.chat.id,"🌍 Country Manager",reply_markup=kb)
 
 
-    elif m.text=="🔧 Service Edit":
+    elif m.text == "🔧 Service Edit":
 
-        kb=InlineKeyboardMarkup()
+        kb = InlineKeyboardMarkup()
 
         for i,c in enumerate(countries):
 
@@ -179,9 +188,9 @@ def panel(m):
         bot.send_message(m.chat.id,"🔧 Select Country",reply_markup=kb)
 
 
-    elif m.text=="⚡ Speed":
+    elif m.text == "⚡ Speed":
 
-        kb=InlineKeyboardMarkup()
+        kb = InlineKeyboardMarkup()
 
         for i,c in enumerate(countries):
 
@@ -198,19 +207,19 @@ def panel(m):
 @bot.callback_query_handler(func=lambda call:call.data.startswith("toggle_"))
 def toggle(call):
 
-    i=int(call.data.split("_")[1])
+    i = int(call.data.split("_")[1])
 
-    countries[i]["active"]=not countries[i]["active"]
+    countries[i]["active"] = not countries[i]["active"]
 
-    bot.answer_callback_query(call.id,"Updated")
+    bot.answer_callback_query(call.id,"Country Updated")
 
 
 @bot.callback_query_handler(func=lambda call:call.data.startswith("service_"))
 def service_select(call):
 
-    i=int(call.data.split("_")[1])
+    i = int(call.data.split("_")[1])
 
-    kb=InlineKeyboardMarkup()
+    kb = InlineKeyboardMarkup()
 
     for s in services:
 
@@ -232,12 +241,12 @@ def service_select(call):
 @bot.callback_query_handler(func=lambda call:call.data.startswith("setservice_"))
 def set_service(call):
 
-    data=call.data.split("_")
+    data = call.data.split("_")
 
-    i=int(data[1])
-    s=data[2]
+    i = int(data[1])
+    s = data[2]
 
-    countries[i]["service"]=s
+    countries[i]["service"] = s
 
     bot.answer_callback_query(call.id,f"{countries[i]['name']} → {s}")
 
@@ -245,9 +254,9 @@ def set_service(call):
 @bot.callback_query_handler(func=lambda call:call.data.startswith("speed_"))
 def speed_select(call):
 
-    i=int(call.data.split("_")[1])
+    i = int(call.data.split("_")[1])
 
-    kb=InlineKeyboardMarkup()
+    kb = InlineKeyboardMarkup()
 
     for name,val in speed_options.items():
 
@@ -269,12 +278,12 @@ def speed_select(call):
 @bot.callback_query_handler(func=lambda call:call.data.startswith("setspeed_"))
 def set_speed(call):
 
-    data=call.data.split("_")
+    data = call.data.split("_")
 
-    i=int(data[1])
-    s=int(data[2])
+    i = int(data[1])
+    s = int(data[2])
 
-    countries[i]["speed"]=s
+    countries[i]["speed"] = s
 
     bot.answer_callback_query(call.id,"Speed Updated")
 
