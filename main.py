@@ -10,49 +10,52 @@ ADMIN_ID = 8626918981
 
 bot = telebot.TeleBot(TOKEN)
 
-speed = 3
 running = True
 otp_count = 0
 
+services = ["Facebook","Telegram","Google","WhatsApp","TikTok","Apple","1xBet"]
+
+speed_options = {
+"1s":1,
+"2s":2,
+"3s":3,
+"5s":5,
+"10s":10,
+"50s":50,
+"1m":60,
+"2m":120
+}
+
 countries = [
 
-{"name":"Bangladesh","flag":"🇧🇩","code":"#BD","prefix":"+88019","service":"Facebook","active":True},
-{"name":"Nepal","flag":"🇳🇵","code":"#NP","prefix":"+97798","service":"WhatsApp","active":False},
-{"name":"Germany","flag":"🇩🇪","code":"#DE","prefix":"+4915","service":"Telegram","active":False},
-{"name":"USA","flag":"🇺🇸","code":"#US","prefix":"+1201","service":"Telegram","active":False},
-{"name":"Afghanistan","flag":"🇦🇫","code":"#AF","prefix":"+937","service":"Facebook","active":False},
-{"name":"Italy","flag":"🇮🇹","code":"#IT","prefix":"+39347","service":"Telegram","active":False},
-{"name":"Saudi Arabia","flag":"🇸🇦","code":"#SA","prefix":"+9665","service":"WhatsApp","active":False},
-{"name":"Vietnam","flag":"🇻🇳","code":"#VN","prefix":"+849","service":"WhatsApp","active":False},
-{"name":"Pakistan","flag":"🇵🇰","code":"#PK","prefix":"+923","service":"WhatsApp","active":False},
-{"name":"Kuwait","flag":"🇰🇼","code":"#KW","prefix":"+965","service":"WhatsApp","active":False}
+{"name":"Bangladesh","flag":"🇧🇩","code":"#BD","prefix":"+88019","service":"Facebook","speed":1,"active":True},
+{"name":"Italy","flag":"🇮🇹","code":"#IT","prefix":"+39347","service":"Telegram","speed":5,"active":False},
+{"name":"USA","flag":"🇺🇸","code":"#US","prefix":"+1201","service":"Google","speed":10,"active":False},
+{"name":"Pakistan","flag":"🇵🇰","code":"#PK","prefix":"+923","service":"WhatsApp","speed":5,"active":False},
+{"name":"Vietnam","flag":"🇻🇳","code":"#VN","prefix":"+849","service":"TikTok","speed":5,"active":False}
 
 ]
 
-# ADMIN CHECK
+
 def is_admin(user_id):
     return user_id == ADMIN_ID
 
 
-# KEYBOARD
 def main_keyboard():
 
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
 
     kb.row("⚡ Speed","📊 OTP Stats")
-    kb.row("🌍 Countries")
+    kb.row("🌍 Countries","🔧 Service Edit")
     kb.row("▶ Start Generator","⏹ Stop Generator")
 
     return kb
 
 
-# NUMBER FORMAT
 def mask(prefix):
-
     return prefix + "***" + str(random.randint(100,999))
 
 
-# OTP GENERATOR
 def generator():
 
     global otp_count
@@ -61,16 +64,16 @@ def generator():
 
         if running:
 
-            active_countries = [c for c in countries if c["active"]]
+            active = [c for c in countries if c["active"]]
 
-            if len(active_countries) == 0:
+            if len(active)==0:
                 time.sleep(2)
                 continue
 
-            c = random.choice(active_countries)
+            c=random.choice(active)
 
-            number = mask(c["prefix"])
-            otp = random.randint(100000,999999)
+            number=mask(c["prefix"])
+            otp=random.randint(100000,999999)
 
             text=f"""
 {c['flag']} {c['name']} {c['code']} 📱 {c['service']}
@@ -93,13 +96,15 @@ def generator():
             except:
                 pass
 
-        time.sleep(speed)
+            time.sleep(c["speed"])
+
+        else:
+            time.sleep(2)
 
 
-threading.Thread(target=generator, daemon=True).start()
+threading.Thread(target=generator,daemon=True).start()
 
 
-# START
 @bot.message_handler(commands=['start'])
 def start(msg):
 
@@ -109,7 +114,6 @@ def start(msg):
     bot.send_message(msg.chat.id,"🤖 OTP BOT READY",reply_markup=main_keyboard())
 
 
-# PANEL
 @bot.message_handler(func=lambda m: True)
 def panel(message):
 
@@ -118,9 +122,19 @@ def panel(message):
     if not is_admin(message.from_user.id):
         return
 
-    if message.text=="⚡ Speed":
 
-        bot.send_message(message.chat.id,f"⚡ Current Speed : {speed} sec")
+    if message.text=="📊 OTP Stats":
+        bot.send_message(message.chat.id,f"📊 OTP Generated : {otp_count}")
+
+
+    elif message.text=="▶ Start Generator":
+        running=True
+        bot.send_message(message.chat.id,"✅ Generator Started")
+
+
+    elif message.text=="⏹ Stop Generator":
+        running=False
+        bot.send_message(message.chat.id,"🛑 Generator Stopped")
 
 
     elif message.text=="🌍 Countries":
@@ -141,37 +155,120 @@ def panel(message):
         bot.send_message(message.chat.id,"🌍 Country Manager",reply_markup=keyboard)
 
 
-    elif message.text=="📊 OTP Stats":
+    elif message.text=="🔧 Service Edit":
 
-        bot.send_message(message.chat.id,f"📊 OTP Generated : {otp_count}")
+        keyboard=InlineKeyboardMarkup()
+
+        for i,c in enumerate(countries):
+
+            keyboard.row(
+            InlineKeyboardButton(
+            f"{c['flag']} {c['name']}",
+            callback_data=f"servicecountry_{i}"
+            )
+            )
+
+        bot.send_message(message.chat.id,"🔧 Select Country",reply_markup=keyboard)
 
 
-    elif message.text=="▶ Start Generator":
+    elif message.text=="⚡ Speed":
 
-        running=True
-        bot.send_message(message.chat.id,"✅ Generator Started")
+        keyboard=InlineKeyboardMarkup()
+
+        for i,c in enumerate(countries):
+
+            keyboard.row(
+            InlineKeyboardButton(
+            f"{c['flag']} {c['name']}",
+            callback_data=f"speedcountry_{i}"
+            )
+            )
+
+        bot.send_message(message.chat.id,"⚡ Select Country",reply_markup=keyboard)
 
 
-    elif message.text=="⏹ Stop Generator":
-
-        running=False
-        bot.send_message(message.chat.id,"🛑 Generator Stopped")
-
-
-# COUNTRY TOGGLE
 @bot.callback_query_handler(func=lambda call: call.data.startswith("toggle_"))
 def toggle(call):
-
-    if call.from_user.id != ADMIN_ID:
-        return
 
     i=int(call.data.split("_")[1])
 
     countries[i]["active"]=not countries[i]["active"]
 
-    status="ON" if countries[i]["active"] else "OFF"
+    bot.answer_callback_query(call.id,f"{countries[i]['name']} toggled")
 
-    bot.answer_callback_query(call.id,f"{countries[i]['name']} {status}")
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("servicecountry_"))
+def service_country(call):
+
+    i=int(call.data.split("_")[1])
+
+    keyboard=InlineKeyboardMarkup()
+
+    for s in services:
+
+        keyboard.row(
+        InlineKeyboardButton(
+        s,
+        callback_data=f"setservice_{i}_{s}"
+        )
+        )
+
+    bot.edit_message_text(
+    f"📱 Select Service for {countries[i]['name']}",
+    call.message.chat.id,
+    call.message.message_id,
+    reply_markup=keyboard
+    )
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("setservice_"))
+def set_service(call):
+
+    data=call.data.split("_")
+
+    i=int(data[1])
+    s=data[2]
+
+    countries[i]["service"]=s
+
+    bot.answer_callback_query(call.id,f"{countries[i]['name']} → {s}")
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("speedcountry_"))
+def speed_country(call):
+
+    i=int(call.data.split("_")[1])
+
+    keyboard=InlineKeyboardMarkup()
+
+    for name,val in speed_options.items():
+
+        keyboard.row(
+        InlineKeyboardButton(
+        name,
+        callback_data=f"setspeed_{i}_{val}"
+        )
+        )
+
+    bot.edit_message_text(
+    f"⚡ Set Speed for {countries[i]['name']}",
+    call.message.chat.id,
+    call.message.message_id,
+    reply_markup=keyboard
+    )
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("setspeed_"))
+def set_speed(call):
+
+    data=call.data.split("_")
+
+    i=int(data[1])
+    s=int(data[2])
+
+    countries[i]["speed"]=s
+
+    bot.answer_callback_query(call.id,f"{countries[i]['name']} speed set to {s}s")
 
 
 print("BOT RUNNING...")
