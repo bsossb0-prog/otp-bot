@@ -6,6 +6,9 @@ import os
 API_TOKEN = '8667923566:AAEs1uWDlbF7aQ2tCUPOKdlHLJOI0UJIweo'
 bot = telebot.TeleBot(API_TOKEN)
 
+# ইউজার ডেটা সাময়িকভাবে রাখার জন্য ডিকশনারি
+user_data = {}
+
 @bot.message_handler(commands=['start'])
 def start(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -13,13 +16,13 @@ def start(message):
     btn2 = types.KeyboardButton("🛠 Termux Setup")
     btn3 = types.KeyboardButton("📖 Help")
     markup.add(btn1, btn2, btn3)
-    bot.send_message(message.chat.id, "🔥 Nayem ভাই, আপনার Termux Live জেনারেটর রেডি!\nনিচের বাটনে ক্লিক করে কমান্ড জেনারেট করুন।", reply_markup=markup)
+    bot.send_message(message.chat.id, "🔥 Nayem ভাই, আপনার Termux Live জেনারেটর রেডি!\n\nকমান্ড তৈরি করতে নিচের বাটনে ক্লিক করুন।", reply_markup=markup)
 
 @bot.message_handler(func=lambda message: True)
 def handle_buttons(message):
     if message.text == "🚀 Generate Command":
-        msg = bot.send_message(message.chat.id, "🎥 ভিডিওর নাম এবং স্ট্রিম কি দিন।\n\nউদাহরণ: `Live.mp4 your-key-here`", parse_mode="Markdown")
-        bot.register_next_step_handler(msg, generate_all_commands)
+        msg = bot.send_message(message.chat.id, "🎥 প্রথমে আপনার ভিডিওর নাম দিন।\n\nউদাহরণ: `Live.mp4`", reply_markup=types.ReplyKeyboardRemove())
+        bot.register_next_step_handler(msg, get_video_name)
     
     elif message.text == "🛠 Termux Setup":
         setup_text = (
@@ -30,37 +33,42 @@ def handle_buttons(message):
         )
         bot.send_message(message.chat.id, setup_text, parse_mode="Markdown")
 
-def generate_all_commands(message):
-    try:
-        data = message.text.split()
-        if len(data) < 2:
-            bot.reply_to(message, "❌ ফরম্যাট ভুল! `video.mp4 key` এভাবে দিন।")
-            return
-        
-        video, key = data[0], data[1]
-        path = "/storage/emulated/0/Download/"
-        rtmp_url = f"rtmp://a.rtmp.youtube.com/live2/{key}"
+# ধাপ ১: ভিডিওর নাম নেওয়া
+def get_video_name(message):
+    chat_id = message.chat.id
+    video_name = message.text
+    user_data[chat_id] = {'video': video_name} # ভিডিওর নাম সেভ হলো
+    
+    msg = bot.send_message(chat_id, f"✅ ভিডিওর নাম: `{video_name}`\n\n🔑 এবার আপনার ইউটিউব **Stream Key** দিন।", parse_mode="Markdown")
+    bot.register_next_step_handler(msg, get_stream_key)
 
-        # সব কমান্ড সাজানো
-        response = (
-            "✅ **আপনার সব কমান্ড রেডি!**\n\n"
-            "📂 **Step 1: Check Video Path**\n"
-            f"`ls {path}{video}`\n\n"
-            "🚀 **Step 2: Start Live (একবার চলবে)**\n"
-            f'`ffmpeg -re -i "{path}{video}" -c:v libx264 -preset veryfast -b:v 2500k -c:a aac -f flv "{rtmp_url}"` \n\n'
-            "🔄 **Step 3: Loop Live (ভিডিও বারবার চলবে)**\n"
-            f'`ffmpeg -re -stream_loop -1 -i "{path}{video}" -c:v libx264 -preset veryfast -b:v 2500k -c:a aac -f flv "{rtmp_url}"` \n\n'
-            "🛑 **Stop Live:**\n"
-            "`Ctrl + C`"
-        )
+# ধাপ ২: স্ট্রিম কি নেওয়া এবং কমান্ড জেনারেট করা
+def get_stream_key(message):
+    chat_id = message.chat.id
+    stream_key = message.text
+    video_name = user_data[chat_id]['video'] # আগের ধাপে সেভ করা ভিডিওর নাম
+    
+    path = "/storage/emulated/0/Download/"
+    rtmp_url = f"rtmp://a.rtmp.youtube.com/live2/{stream_key}"
 
-        # ইনলাইন বাটন (YouTube Studio তে যাওয়ার জন্য)
-        markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton("🌐 Open YouTube Studio", url="https://studio.youtube.com/video/live/0"))
-        
-        bot.send_message(message.chat.id, response, parse_mode="Markdown", reply_markup=markup)
+    response = (
+        "✅ **আপনার সব কমান্ড রেডি!**\n\n"
+        "📂 **Step 1: Check Video Path**\n"
+        f"`ls {path}{video_name}`\n\n"
+        "🚀 **Step 2: Start Live (একবার চলবে)**\n"
+        f'`ffmpeg -re -i "{path}{video_name}" -c:v libx264 -preset veryfast -b:v 2500k -c:a aac -f flv "{rtmp_url}"` \n\n'
+        "🔄 **Step 3: Loop Live (ভিডিও বারবার চলবে)**\n"
+        f'`ffmpeg -re -stream_loop -1 -i "{path}{video_name}" -c:v libx264 -preset veryfast -b:v 2500k -c:a aac -f flv "{rtmp_url}"` \n\n'
+        "🛑 **Stop Live:** `Ctrl + C`"
+    )
 
-    except Exception as e:
-        bot.reply_to(message, "Error: কমান্ড জেনারেট করা সম্ভব হয়নি।")
+    # মেইন মেনু বাটন আবার ফিরিয়ে আনা
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add("🚀 Generate Command", "🛠 Termux Setup", "📖 Help")
+    
+    bot.send_message(chat_id, response, parse_mode="Markdown", reply_markup=markup)
+    
+    # ডেটা ক্লিয়ার করা
+    del user_data[chat_id]
 
 bot.polling()
