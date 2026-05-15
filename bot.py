@@ -1,14 +1,11 @@
 import telebot
 from telebot import types
+import os
 
-# ---------------------------------------------------------
-# নিচে আপনার বট টোকেনটি বসান (যেমন: '123456:ABC-DEF...')
-API_TOKEN = '8667923566:AAEs1uWDlbF7aQ2tCUPOKdlHLJOI0UJIweo' 
-# ---------------------------------------------------------
-
+# আপনার বট টোকেন দিন
+API_TOKEN = '8667923566:AAEs1uWDlbF7aQ2tCUPOKdlHLJOI0UJIweo'
 bot = telebot.TeleBot(API_TOKEN)
 
-# স্টার্ট কমান্ড হ্যান্ডলার
 @bot.message_handler(commands=['start'])
 def start(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -16,61 +13,54 @@ def start(message):
     btn2 = types.KeyboardButton("🛠 Termux Setup")
     btn3 = types.KeyboardButton("📖 Help")
     markup.add(btn1, btn2, btn3)
-    
-    welcome_msg = (
-        "👋 স্বাগতম নায়েম ভাই!\n\n"
-        "এই বট আপনাকে YouTube Live করার জন্য সঠিক FFmpeg কমান্ড তৈরি করে দেবে।"
-    )
-    bot.send_message(message.chat.id, welcome_msg, reply_markup=markup)
+    bot.send_message(message.chat.id, "🔥 Nayem ভাই, আপনার Termux Live জেনারেটর রেডি!\nনিচের বাটনে ক্লিক করে কমান্ড জেনারেট করুন।", reply_markup=markup)
 
-# মেসেজ হ্যান্ডলার
 @bot.message_handler(func=lambda message: True)
-def handle_text(message):
+def handle_buttons(message):
     if message.text == "🚀 Generate Command":
-        msg = bot.send_message(message.chat.id, "আপনার ভিডিওর নাম এবং স্ট্রিম কি (Stream Key) দিন।\n\nউদাহরণ: `live.mp4 your-key-here`", parse_mode="Markdown")
-        bot.register_next_step_handler(msg, process_ffmpeg)
+        msg = bot.send_message(message.chat.id, "🎥 ভিডিওর নাম এবং স্ট্রিম কি দিন।\n\nউদাহরণ: `Live.mp4 your-key-here`", parse_mode="Markdown")
+        bot.register_next_step_handler(msg, generate_all_commands)
     
     elif message.text == "🛠 Termux Setup":
         setup_text = (
-            "টার্মাক্স সেটআপ কমান্ড:\n\n"
+            "🛠 **Step 1: Update & Install Packages**\n"
             "`pkg update && pkg upgrade -y` \n"
-            "`termux-setup-storage` \n"
-            "`pkg install ffmpeg -y`"
+            "`pkg install ffmpeg -y` \n"
+            "`termux-setup-storage`"
         )
         bot.send_message(message.chat.id, setup_text, parse_mode="Markdown")
-        
-    elif message.text == "📖 Help":
-        help_text = (
-            "১. আপনার ভিডিওর নাম `live.mp4` রাখুন।\n"
-            "২. ভিডিওটি ফোনের Download ফোল্ডারে থাকতে হবে।\n"
-            "৩. এই বট থেকে জেনারেট করা কমান্ডটি Termux-এ পেস্ট করুন।"
-        )
-        bot.send_message(message.chat.id, help_text)
 
-# কমান্ড তৈরির লজিক
-def process_ffmpeg(message):
+def generate_all_commands(message):
     try:
-        user_input = message.text.split()
-        if len(user_input) < 2:
-            bot.reply_to(message, "❌ ভুল হয়েছে! ভিডিওর নাম এবং স্ট্রিম কি-এর মাঝে একটি স্পেস (Space) দিন।")
+        data = message.text.split()
+        if len(data) < 2:
+            bot.reply_to(message, "❌ ফরম্যাট ভুল! `video.mp4 key` এভাবে দিন।")
             return
         
-        v_name = user_input[0]
-        s_key = user_input[1]
-        
-        # FFmpeg কমান্ড ফরম্যাট
-        final_cmd = f'ffmpeg -re -i {v_name} -c:v libx264 -preset veryfast -b:v 2500k -c:a aac -f flv "rtmp://a.rtmp.youtube.com/live2/{s_key}"'
-        
-        # ইনলাইন কপি বাটন
-        markup = types.InlineKeyboardMarkup()
-        btn_studio = types.InlineKeyboardButton("🌐 Go to YouTube Studio", url="https://studio.youtube.com")
-        markup.add(btn_studio)
-        
-        bot.send_message(message.chat.id, f"✅ আপনার কমান্ড তৈরি:\n\n`{final_cmd}`", parse_mode="Markdown", reply_markup=markup)
-        
-    except Exception as e:
-        bot.reply_to(message, "দুঃখিত, কমান্ড তৈরি করতে সমস্যা হয়েছে।")
+        video, key = data[0], data[1]
+        path = "/storage/emulated/0/Download/"
+        rtmp_url = f"rtmp://a.rtmp.youtube.com/live2/{key}"
 
-# বট পোলিং শুরু
-print("বটটি এখন সচল...")
+        # সব কমান্ড সাজানো
+        response = (
+            "✅ **আপনার সব কমান্ড রেডি!**\n\n"
+            "📂 **Step 1: Check Video Path**\n"
+            f"`ls {path}{video}`\n\n"
+            "🚀 **Step 2: Start Live (একবার চলবে)**\n"
+            f'`ffmpeg -re -i "{path}{video}" -c:v libx264 -preset veryfast -b:v 2500k -c:a aac -f flv "{rtmp_url}"` \n\n'
+            "🔄 **Step 3: Loop Live (ভিডিও বারবার চলবে)**\n"
+            f'`ffmpeg -re -stream_loop -1 -i "{path}{video}" -c:v libx264 -preset veryfast -b:v 2500k -c:a aac -f flv "{rtmp_url}"` \n\n'
+            "🛑 **Stop Live:**\n"
+            "`Ctrl + C`"
+        )
+
+        # ইনলাইন বাটন (YouTube Studio তে যাওয়ার জন্য)
+        markup = types.InlineKeyboardMarkup()
+        markup.add(types.InlineKeyboardButton("🌐 Open YouTube Studio", url="https://studio.youtube.com/video/live/0"))
+        
+        bot.send_message(message.chat.id, response, parse_mode="Markdown", reply_markup=markup)
+
+    except Exception as e:
+        bot.reply_to(message, "Error: কমান্ড জেনারেট করা সম্ভব হয়নি।")
+
 bot.polling()
